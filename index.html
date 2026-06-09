@@ -1,0 +1,3386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Political CRM - Executive Dashboard</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- SheetJS Excel Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            /* Prestigious Leadership Color Scheme (Royal Navy & Brushed Gold) */
+            --royal-navy: #0a192f;
+            --navy-mid: #0f2240;
+            --navy-light: #172a45;
+            --navy-accent: #233554;
+            --gold-brass: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-dark: #aa882c;
+            --gold-glowing: rgba(212, 175, 55, 0.4);
+            
+            /* UI Accents */
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --sky: #0ea5e9;
+            --violet: #8b5cf6;
+            
+            /* Gradients */
+            --royal-gradient: linear-gradient(135deg, var(--royal-navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+            --gold-gradient: linear-gradient(135deg, #f1c40f 0%, var(--gold-brass) 50%, var(--gold-dark) 100%);
+            --card-gradient: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+
+            /* Typography */
+            --font-main: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+            /* 3D Shadows & Layering */
+            --shadow-flat: 0 1px 3px rgba(10, 25, 47, 0.05);
+            --shadow-3d: 0 15px 35px -10px rgba(10, 25, 47, 0.12), 
+                         0 4px 10px -5px rgba(10, 25, 47, 0.05),
+                         inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            --shadow-3d-hover: 0 25px 45px -12px rgba(10, 25, 47, 0.22),
+                               0 10px 15px -8px rgba(212, 175, 55, 0.15),
+                               inset 0 1px 0 rgba(255, 255, 255, 1);
+            --shadow-button-3d: 0 4px 0 var(--gold-dark), 0 8px 15px rgba(10, 25, 47, 0.2);
+            --shadow-button-3d-active: 0 1px 0 var(--gold-dark), 0 2px 4px rgba(10, 25, 47, 0.1);
+
+            --radius: 12px;
+            --radius-lg: 20px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #f3f5f8;
+            color: #334155;
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient 3D Glowing background blobs */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, rgba(255,255,255,0) 70%);
+            top: 10%;
+            left: -150px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.04) 0%, rgba(255,255,255,0) 70%);
+            bottom: 15%;
+            right: -200px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* ─── SYSTEM LOADER ───────────────────────────────────────── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--royal-navy);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            gap: 24px;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-3d-box {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            transform-style: preserve-3d;
+            animation: spin3D 2.5s infinite linear;
+        }
+
+        .loading-3d-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--gold-brass);
+            background: rgba(10, 25, 71, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 15px var(--gold-glowing);
+        }
+
+        /* Box 3D alignment */
+        .face-front  { transform: translateZ(40px); }
+        .face-back   { transform: rotateY(180deg) translateZ(40px); }
+        .face-left   { transform: rotateY(-90deg) translateZ(40px); }
+        .face-right  { transform: rotateY(90deg) translateZ(40px); }
+        .face-top    { transform: rotateX(90deg) translateZ(40px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+        @keyframes spin3D {
+            0% { transform: rotateX(0deg) rotateY(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        .loading-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .loading-bar-wrap {
+            width: 280px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .loading-bar {
+            height: 100%;
+            background: var(--gold-gradient);
+            width: 0;
+            border-radius: 10px;
+            animation: loadbar 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes loadbar {
+            to { width: 100%; }
+        }
+
+        /* ─── DYNAMIC NOTIFICATION SYSTEM ────────────────────────── */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast-message {
+            background: white;
+            color: var(--royal-navy);
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            border-left: 5px solid var(--gold-brass);
+            transform: translateX(120%);
+            animation: toastIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        .toast-message.success { border-left-color: var(--emerald); }
+        .toast-message.info { border-left-color: var(--sky); }
+        .toast-message.warning { border-left-color: var(--gold-brass); }
+
+        @keyframes toastIn {
+            to { transform: translateX(0); }
+        }
+
+        /* ─── DASHBOARD LAYOUT ────────────────────────────────────── */
+        .layout-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ─── SIDEBAR ────────────────────────────────────────────── */
+        .sidebar {
+            background: var(--royal-gradient);
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 90;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .logo-3d {
+            width: 46px;
+            height: 46px;
+            background: var(--gold-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--royal-navy);
+            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+            transform: rotate(-5deg);
+            transition: var(--transition);
+        }
+
+        .logo-section:hover .logo-3d {
+            transform: rotate(5deg) scale(1.05);
+        }
+
+        .logo-title-wrap h2 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(180deg, #ffffff 0%, #d1d5db 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-title-wrap p {
+            font-size: 11px;
+            color: var(--gold-brass);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .politician-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .politician-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--gold-gradient);
+            color: var(--royal-navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .politician-info h4 {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .politician-info p {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 14.5px;
+            text-decoration: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid var(--gold-brass);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            font-size: 12px;
+            color: #475569;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* ─── MAIN CONTENT AREA ──────────────────────────────────── */
+        .main-content {
+            padding: 30px 40px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        /* ─── TOP BAR ────────────────────────────────────────────── */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 35px;
+            gap: 20px;
+        }
+
+        .welcome-title h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--royal-navy);
+            letter-spacing: -0.5px;
+        }
+
+        .welcome-title p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .date-badge {
+            background: white;
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            box-shadow: var(--shadow-flat);
+            border: 1px solid rgba(0,0,0,0.05);
+            font-weight: 600;
+            font-size: 13.5px;
+            color: var(--navy-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ─── STATS GRID (3D Elevated Cards) ─────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-3d-hover);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        /* Beveled gold top edge */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--royal-navy);
+        }
+        
+        .stat-card:nth-child(2)::before { background: var(--emerald); }
+        .stat-card:nth-child(3)::before { background: var(--sky); }
+        .stat-card:nth-child(4)::before { background: var(--gold-brass); }
+
+        .stat-icon-wrap {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .bg-navy-soft { background-color: #eff6ff; color: #1e3a8a; }
+        .bg-emerald-soft { background-color: #ecfdf5; color: #065f46; }
+        .bg-sky-soft { background-color: #f0f9ff; color: #075985; }
+        .bg-gold-soft { background-color: #fffbeb; color: #854d0e; }
+
+        .stat-details h3 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--royal-navy);
+            line-height: 1.2;
+        }
+
+        .stat-details p {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── INTERACTIVE CHARTS & METRICS ───────────────────────── */
+        .analytics-container {
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 24px;
+            margin-bottom: 35px;
+        }
+
+        .panel-3d {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+            position: relative;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .panel-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--royal-navy);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Sentiment Gauge Chart */
+        .gauge-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            position: relative;
+        }
+
+        .gauge-svg {
+            width: 220px;
+            height: 120px;
+        }
+
+        .gauge-needle {
+            transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: 110px 110px;
+        }
+
+        .gauge-score {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--royal-navy);
+            margin-top: 8px; /* Shifted down to clear the needle pivot center dot */
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .gauge-label {
+            font-size: 13.5px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .gauge-legend {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            margin-top: 15px;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot.green { background: var(--emerald); }
+        .dot.yellow { background: var(--gold-brass); }
+        .dot.red { background: var(--rose); }
+
+        /* Custom 3D SVG Bar Chart */
+        .chart-svg-wrap {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            margin-top: 15px;
+        }
+
+        .chart-grid-line {
+            stroke: #f1f5f9;
+            stroke-width: 1;
+        }
+
+        .bar-3d {
+            transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1), y 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .bar-3d:hover {
+            filter: brightness(1.1);
+        }
+
+        /* ─── DATA MANAGEMENT DRAWERS ────────────────────────────── */
+        .excel-panel {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+            margin-bottom: 35px;
+        }
+
+        .uploader-zone {
+            border: 2px dashed rgba(212, 175, 55, 0.4);
+            background: #fffdf5;
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .uploader-zone:hover, .uploader-zone.dragover {
+            background: #fffbeb;
+            border-color: var(--gold-brass);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+        }
+
+        .uploader-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .uploader-zone:hover .uploader-icon {
+            transform: translateY(-4px);
+        }
+
+        .uploader-text h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--royal-navy);
+            margin-bottom: 4px;
+        }
+
+        .uploader-text p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .uploader-file-info {
+            margin-top: 12px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--emerald);
+            display: none;
+        }
+
+        .btn-action-3d {
+            font-family: var(--font-main);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--royal-navy);
+            background: var(--gold-gradient);
+            border: none;
+            border-bottom: 4px solid var(--gold-dark);
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            box-shadow: var(--shadow-button-3d);
+            transition: all 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-action-3d:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        .btn-action-3d:active {
+            transform: translateY(3px);
+            border-bottom-width: 1px;
+            box-shadow: var(--shadow-button-3d-active);
+        }
+
+        /* ─── FILTERS PANEL ───────────────────────────────────────── */
+        .filter-panel {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+            margin-bottom: 25px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-input, .filter-select {
+            font-family: var(--font-main);
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14.5px;
+            color: var(--royal-navy);
+            background: #f8fafc;
+            outline: none;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            border-color: var(--gold-brass);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+        }
+
+        .btn-reset-3d {
+            font-family: var(--font-main);
+            background: #f1f5f9;
+            border: none;
+            border-bottom: 4px solid #cbd5e1;
+            border-radius: 8px;
+            color: #475569;
+            font-weight: 700;
+            padding: 10px 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #cbd5e1;
+            transition: all 0.1s ease;
+            align-self: flex-end;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-reset-3d:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-reset-3d:active {
+            transform: translateY(3px);
+            border-bottom-width: 1px;
+            box-shadow: 0 1px 0 #cbd5e1;
+        }
+
+        /* ─── CONTACTS GRID & CARDS (3D Interactive Tilt) ────────── */
+        .contacts-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .contacts-count {
+            font-size: 14.5px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .contacts-count strong {
+            color: var(--royal-navy);
+            font-weight: 700;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+        }
+
+        .view-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .view-btn.active, .view-btn:hover {
+            background: white;
+            color: var(--royal-navy);
+            box-shadow: var(--shadow-flat);
+        }
+
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            perspective: 1000px; /* Enable 3D coordinate space */
+        }
+
+        /* Contact Card with 3D Tilt */
+        .contact-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: transform 0.15s ease-out, box-shadow 0.3s ease, border-color 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d; /* Preserve child elements 3D positions */
+            transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--s, 1));
+        }
+
+        .contact-card:hover {
+            box-shadow: var(--shadow-3d-hover);
+            border-color: var(--gold-brass);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+            transform: translateZ(25px); /* Push details in front on Z-axis */
+        }
+
+        .card-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .card-name-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--royal-navy);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .category-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Color configurations for political roles */
+        .badge-volunteer { background: #eff6ff; color: #2563a8; border: 1px solid #dbeafe; }
+        .badge-donor { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+        .badge-influencer { background: #f5f3ff; color: #7c3aed; border: 1px solid #eedeff; }
+        .badge-vip { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+        .badge-booth { background: #fff1f2; color: #e11d48; border: 1px solid #ffe4e6; }
+        .badge-party { background: #fdf2f8; color: #db2777; border: 1px solid #fce7f3; }
+
+        .card-divider {
+            border: none;
+            border-top: 1px solid #f1f5f9;
+            margin: 16px 0;
+        }
+
+        .card-details {
+            transform: translateZ(15px);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+            color: #475569;
+        }
+
+        .detail-row svg {
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        /* Loyalty slider */
+        .loyalty-indicator-wrap {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loyalty-track {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .loyalty-bar {
+            height: 100%;
+            background: var(--gold-gradient);
+            border-radius: 10px;
+            width: 0;
+            transition: width 0.8s ease;
+        }
+
+        .loyalty-text {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .card-actions {
+            transform: translateZ(20px);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-details-3d {
+            flex: 1;
+            font-family: var(--font-main);
+            background: var(--royal-navy);
+            border: none;
+            border-bottom: 4px solid var(--navy-mid);
+            border-radius: 8px;
+            color: white;
+            font-size: 12.5px;
+            font-weight: 700;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(10, 25, 47, 0.15);
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-details-3d:hover {
+            background: var(--navy-light);
+        }
+
+        .btn-details-3d:active {
+            transform: translateY(3px);
+            border-bottom-width: 1px;
+            box-shadow: 0 1px 2px rgba(10, 25, 47, 0.1);
+        }
+
+        .btn-call-3d {
+            width: 36px;
+            height: 36px;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #d1fae5;
+            border-bottom: 4px solid #a7f3d0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            box-shadow: 0 3px 6px rgba(5, 150, 105, 0.1);
+            transition: all 0.1s ease;
+        }
+
+        .btn-call-3d:hover {
+            background: #d1fae5;
+        }
+
+        .btn-call-3d:active {
+            transform: translateY(3px);
+            border-bottom-width: 1px;
+            box-shadow: 0 1px 2px rgba(5, 150, 105, 0.05);
+        }
+
+        /* ─── CONTACTS LIST VIEW ─────────────────────────────────── */
+        .contacts-list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .list-row {
+            background: white;
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .list-row:hover {
+            transform: translateX(6px);
+            border-color: var(--gold-brass);
+            box-shadow: var(--shadow-3d-hover);
+        }
+
+        .list-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            font-size: 15px;
+        }
+
+        .list-info {
+            display: grid;
+            grid-template-columns: 180px 1.5fr 1fr 1fr;
+            flex: 1;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .list-name {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--royal-navy);
+        }
+
+        .list-detail {
+            font-size: 13.5px;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ─── PAGINATION ─────────────────────────────────────────── */
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 30px;
+        }
+
+        .page-btn-3d {
+            width: 38px;
+            height: 38px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-bottom: 3px solid #cbd5e1;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+            color: var(--royal-navy);
+        }
+
+        .page-btn-3d:hover {
+            border-color: var(--gold-brass);
+            color: var(--gold-brass);
+        }
+
+        .page-btn-3d.active {
+            background: var(--royal-navy);
+            border-color: var(--royal-navy);
+            border-bottom-color: var(--navy-mid);
+            color: white;
+        }
+
+        .page-btn-3d:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            border-bottom-width: 3px !important;
+            box-shadow: none !important;
+        }
+
+        .page-btn-3d:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        /* ─── PROFILE INSPECTOR (DETAIL PAGE) ─────────────────────── */
+        #detail-page {
+            display: none;
+        }
+
+        #detail-page.visible {
+            display: block;
+        }
+
+        #list-page.hidden {
+            display: none;
+        }
+
+        .back-btn-3d {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-bottom: 3px solid #cbd5e1;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            color: var(--royal-navy);
+            cursor: pointer;
+            box-shadow: var(--shadow-flat);
+            transition: all 0.1s ease;
+            margin-bottom: 24px;
+        }
+
+        .back-btn-3d:hover {
+            border-color: var(--gold-brass);
+            color: var(--gold-brass);
+        }
+
+        .back-btn-3d:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        .profile-hero {
+            background: var(--royal-gradient);
+            border-radius: var(--radius-lg);
+            padding: 35px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-3d);
+            margin-bottom: 30px;
+        }
+
+        .profile-hero::before {
+            content: '';
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, rgba(255,255,255,0) 70%);
+            right: -50px;
+            top: -50px;
+        }
+
+        .profile-avatar-3d {
+            width: 90px;
+            height: 90px;
+            background: var(--gold-gradient);
+            border-radius: 20px;
+            color: var(--royal-navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            font-weight: 800;
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.25), inset 0 1px 0 rgba(255,255,255,0.4);
+            border: 3px solid rgba(255,255,255,0.15);
+        }
+
+        .profile-title-info h2 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .profile-metadata {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 13.5px;
+            color: #94a3b8;
+        }
+
+        .profile-metadata span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .profile-badge {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-3d);
+        }
+
+        .info-card h4 {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--royal-navy);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8fafc;
+            gap: 12px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-icon-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--royal-navy);
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--royal-navy);
+            margin-top: 2px;
+        }
+
+        /* Action bar inside profile */
+        .profile-actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* ─── PERSISTENT TASK MANAGER (Checklist) ───────────────── */
+        .todo-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .todo-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .todo-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .todo-item.completed {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            opacity: 0.7;
+        }
+
+        .todo-item-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        .todo-delete-btn {
+            background: transparent;
+            border: none;
+            color: var(--rose);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ─── CHRONOLOGICAL TIMELINE (Activity Logs) ───────────── */
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+            margin-top: 10px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-node {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-node::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--royal-navy);
+        }
+
+        .timeline-node.call::before { border-color: var(--emerald); }
+        .timeline-node.system::before { border-color: var(--sky); }
+
+        .timeline-time {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .timeline-content {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--royal-navy);
+            margin-top: 2px;
+        }
+
+        .timeline-desc {
+            font-size: 12.5px;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 2px;
+        }
+
+        /* ─── CALLING DIALER SIMULATOR (MODAL DIALOG) ────────────── */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 25, 47, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dialer-box {
+            background: var(--royal-gradient);
+            color: white;
+            border-radius: var(--radius-lg);
+            width: 380px;
+            padding: 30px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 1px var(--glass-border);
+            text-align: center;
+            transform: scale(0.9) translateY(30px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal.visible .dialer-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .dialer-status-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--rose);
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            animation: blink 1.2s infinite;
+        }
+
+        .dialer-status-dot.ringing { background: var(--gold-brass); }
+        .dialer-status-dot.connected { background: var(--emerald); }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+
+        .dialer-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .dialer-number {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        .dialer-device {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .dialer-timer {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: monospace;
+            margin-bottom: 16px;
+            color: var(--gold-brass);
+        }
+
+        .dialer-log-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .dialer-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .dialer-select, .dialer-textarea {
+            font-family: var(--font-main);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            outline: none;
+            width: 100%;
+        }
+
+        .dialer-select option {
+            background: var(--royal-navy);
+            color: white;
+        }
+
+        .dialer-textarea {
+            resize: none;
+            height: 60px;
+        }
+
+        .dialer-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .btn-hangup {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--rose);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 15px rgba(244, 63, 94, 0.3);
+            transition: transform 0.1s;
+        }
+
+        .btn-hangup:active { transform: scale(0.9); }
+
+        .btn-connect {
+            background: var(--emerald);
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ─── DYNAMIC EMPTY STATE ────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-3d);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 18px; color: var(--royal-navy); margin-bottom: 6px; }
+        .empty-state p { font-size: 13.5px; color: #64748b; }
+
+        /* ─── RESPONSIVE RULES ───────────────────────────────────── */
+        @media (max-width: 1200px) {
+            .layout-container { grid-template-columns: 80px 1fr; }
+            .sidebar { padding: 20px 10px; align-items: center; }
+            .logo-section, .politician-card, .sidebar-footer, .nav-item span { display: none; }
+            .politician-avatar { margin: 0 auto; }
+            .nav-item { padding: 14px; justify-content: center; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .analytics-container { grid-template-columns: 1fr; }
+        }
+
+        /* Dedicated Premium Tablet & Mobile View Layout (Under 768px) */
+        @media (max-width: 768px) {
+            .layout-container {
+                display: block; /* Disable grid on mobile to resolve fixed positioning static offset bugs */
+            }
+            
+            .sidebar {
+                position: fixed;
+                bottom: 0 !important;
+                top: unset !important; /* Clears sticky top: 0 */
+                left: 0;
+                width: 100%;
+                height: 65px !important; /* Bottom bar navigation */
+                flex-direction: row;
+                padding: 4px 8px;
+                border-right: none;
+                border-top: 1px solid var(--glass-border);
+                background: var(--royal-navy);
+                justify-content: space-around;
+                align-items: center;
+                box-shadow: 0 -4px 15px rgba(10, 25, 47, 0.2);
+                z-index: 100;
+            }
+
+            .logo-section, .politician-card, .sidebar-footer {
+                display: none !important;
+            }
+
+            .nav-menu {
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-around;
+                gap: 0;
+            }
+
+            .nav-item {
+                padding: 6px 12px;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                font-size: 10.5px;
+                border-radius: 8px;
+                flex: 1;
+                border-left: none !important;
+                border-bottom: 2px solid transparent;
+            }
+
+            .nav-item.active {
+                border-bottom-color: var(--gold-brass);
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .nav-item span {
+                display: block !important;
+            }
+
+            .nav-item span:last-child {
+                display: none !important; /* Hide label text on mobile, show only icons to save screen space */
+            }
+
+            .nav-icon {
+                font-size: 20px;
+            }
+
+            .main-content {
+                padding: 15px 15px 85px 15px; /* Extra bottom pad to prevent overlap with bottom bar nav */
+                height: auto;
+            }
+
+            .welcome-title h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2x2 grid on tablets */
+                gap: 14px;
+            }
+
+            .contacts-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+
+            /* Responsive Dialer Modal Box */
+            .dialer-box {
+                width: 92%;
+                padding: 20px 16px;
+                margin: 0 auto;
+            }
+
+            .dialer-device {
+                padding: 14px 10px;
+                margin-bottom: 16px;
+            }
+
+            .dialer-timer {
+                font-size: 26px;
+                margin-bottom: 10px;
+            }
+
+            /* Profile Inspector elements */
+            .profile-hero {
+                padding: 20px;
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+            }
+
+            .profile-avatar-3d {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .profile-title-info h2 {
+                font-size: 22px;
+            }
+
+            .profile-metadata {
+                justify-content: center;
+                font-size: 12.5px;
+            }
+
+            .profile-badges {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .list-info {
+                grid-template-columns: 1fr; /* Stack columns inside list row */
+                gap: 4px;
+            }
+            
+            .list-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .list-row .category-badge {
+                align-self: flex-start;
+            }
+        }
+
+        /* Phone layout below 480px */
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr; /* Stack stats vertically on phones */
+                gap: 12px;
+            }
+            .contacts-grid {
+                grid-template-columns: 1fr;
+            }
+            .contact-card {
+                padding: 16px;
+            }
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- DYNAMIC SYSTEM LOADER -->
+    <div class="loading-overlay" id="loader">
+        <div class="loading-3d-box">
+            <div class="loading-3d-face face-front">🏛️</div>
+            <div class="loading-3d-face face-back">🏛️</div>
+            <div class="loading-3d-face face-left">👥</div>
+            <div class="loading-3d-face face-right">👥</div>
+            <div class="loading-3d-face face-top">🏅</div>
+            <div class="loading-3d-face face-bottom">🏅</div>
+        </div>
+        <div class="loading-title">Political CRM v2.0</div>
+        <div class="loading-bar-wrap">
+            <div class="loading-bar"></div>
+        </div>
+    </div>
+
+    <!-- TOAST MESSAGES -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MAIN CRM CONTAINER -->
+    <div class="layout-container">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-3d">🏛️</div>
+                <div class="logo-title-wrap">
+                    <h2>Leader CRM</h2>
+                    <p>Executive Suite</p>
+                </div>
+            </div>
+
+            <!-- Active Leader Profile Widget -->
+            <div class="politician-card">
+                <div class="politician-avatar">M</div>
+                <div class="politician-info">
+                    <h4>MLA Office</h4>
+                    <p>Karnataka - General</p>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a class="nav-item active" id="menuDashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" id="menuContacts">
+                    <span class="nav-icon">👥</span>
+                    <span>Contacts Database</span>
+                </a>
+                <a class="nav-item" id="menuAnalytics">
+                    <span class="nav-icon">📈</span>
+                    <span>Visual Analytics</span>
+                </a>
+                <a class="nav-item" id="menuUploader">
+                    <span class="nav-icon">📥</span>
+                    <span>Excel Importer</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                &copy; 2026 Political CRM Suite
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <main class="main-content">
+            
+            <!-- TOP BAR -->
+            <header class="top-bar">
+                <div class="welcome-title">
+                    <h1 id="pageTitle">Executive CRM Dashboard</h1>
+                    <p id="pageSubtitle">Real-time Campaign and Constituency Management Panel</p>
+                </div>
+                <div class="header-actions">
+                    <div class="date-badge">
+                        <span>🗓️</span>
+                        <span id="liveDate">June 9, 2026</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ─── APP SECTION: DASHBOARD ─── -->
+            <div id="sectionDashboard">
+                
+                <!-- Campaign District Control Board -->
+                <div class="panel-3d" style="margin-bottom: 25px;">
+                    <div class="panel-header">
+                        <h3>Campaign District Control Board</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color:#64748b; margin-top: -10px; margin-bottom: 16px;">
+                        Select a campaign district to retrieve local voter database, dynamic statistics, and support ratio targets.
+                    </p>
+                    <div id="districtBoard" style="display: flex; gap:10px; flex-wrap:wrap;"></div>
+                </div>
+
+                <!-- 3D Stats counters -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card" id="cardTotal">
+                        <div class="stat-icon-wrap bg-navy-soft">👥</div>
+                        <div class="stat-details">
+                            <h3 id="statTotalVal">0</h3>
+                            <p>Total Contacts</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="cardVolunteer">
+                        <div class="stat-icon-wrap bg-emerald-soft">🤝</div>
+                        <div class="stat-details">
+                            <h3 id="statVolunteerVal">0</h3>
+                            <p>Volunteers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="cardVip">
+                        <div class="stat-icon-wrap bg-sky-soft">🏅</div>
+                        <div class="stat-details">
+                            <h3 id="statVipVal">0</h3>
+                            <p>VIP & Influencers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="cardCoverage">
+                        <div class="stat-icon-wrap bg-gold-soft">📍</div>
+                        <div class="stat-details">
+                            <h3 id="statCoverageVal">0</h3>
+                            <p>Regions Covered</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SVG Graphics Area -->
+                <div class="analytics-container">
+                    
+                    <!-- Sentiment Gauge Arc -->
+                    <div class="panel-3d">
+                        <div class="panel-header">
+                            <h3>Voter Support Meter</h3>
+                        </div>
+                        <div class="gauge-chart-container">
+                            <svg class="gauge-svg" viewBox="0 0 220 120">
+                                <!-- Background Track -->
+                                <path d="M20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#f1f5f9" stroke-width="18" stroke-linecap="round"/>
+                                <!-- Colored Arc Segment Stops -->
+                                <path d="M20 110 A 90 90 0 0 1 200 110" fill="none" stroke="url(#gaugeGradient)" stroke-width="18" stroke-linecap="round"/>
+                                
+                                <defs>
+                                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f43f5e" />
+                                        <stop offset="50%" stop-color="#eab308" />
+                                        <stop offset="100%" stop-color="#10b981" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Indicator Needle -->
+                                <polygon id="gaugeNeedle" points="110,110 106,40 110,30 114,40" fill="var(--royal-navy)" class="gauge-needle" transform="rotate(-90 110 110)"/>
+                                <circle cx="110" cy="110" r="6" fill="var(--royal-navy)"/>
+                            </svg>
+                            <div class="gauge-score" id="gaugeScore">0%</div>
+                            <div class="gauge-label" id="gaugeLabel">Voter Support</div>
+                            <div style="font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 600;" id="gaugeDetailText">0 of 0 voters supporting</div>
+                            
+                            <div class="gauge-legend">
+                                <div class="legend-item"><span class="dot green"></span> Support</div>
+                                <div class="legend-item"><span class="dot yellow"></span> Undecided</div>
+                                <div class="legend-item"><span class="dot red"></span> Critical</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Bar Chart -->
+                    <div class="panel-3d">
+                        <div class="panel-header">
+                            <h3>Constituent Role Breakdown</h3>
+                        </div>
+                        <div class="chart-svg-wrap">
+                            <svg width="100%" height="100%" id="roleChartSvg">
+                                <!-- Grid Lines -->
+                                <line x1="40" y1="20" x2="95%" y2="20" class="chart-grid-line"/>
+                                <line x1="40" y1="60" x2="95%" y2="60" class="chart-grid-line"/>
+                                <line x1="40" y1="100" x2="95%" y2="100" class="chart-grid-line"/>
+                                <line x1="40" y1="140" x2="95%" y2="140" class="chart-grid-line"/>
+                                <line x1="40" y1="150" x2="95%" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+                                
+                                <!-- Y Axis Labels -->
+                                <text x="30" y="25" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="end" id="chartY3">30</text>
+                                <text x="30" y="65" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="end" id="chartY2">20</text>
+                                <text x="30" y="105" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="end" id="chartY1">10</text>
+                                <text x="30" y="145" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="end">0</text>
+                                
+                                <!-- Group for dynamic bars -->
+                                <g id="chartBarsGroup"></g>
+                            </svg>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Constituency Quick Heat Grid Filter -->
+                <div class="panel-3d" style="margin-bottom: 0;">
+                    <div class="panel-header">
+                        <h3>Interactive Constituency Filter Grid</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color:#64748b; margin-top: -10px; margin-bottom: 16px;">
+                        Quickly toggle region filter nodes. Click a constituency block to filter matching profiles below.
+                    </p>
+                    <div id="constituencyBoard" style="display: flex; gap:10px; flex-wrap:wrap;"></div>
+                </div>
+
+            </div>
+
+            <!-- ─── APP SECTION: CONTACTS DATABASE ─── -->
+            <div id="sectionContacts">
+                
+                <!-- Filters panel -->
+                <div class="filter-panel">
+                    <h3 style="font-size: 15px; font-weight:700; color:var(--royal-navy);">🔍 Filter & Target Controls</h3>
+                    <div class="filter-grid">
+                        <div class="filter-field">
+                            <label class="filter-label">Search Contact</label>
+                            <input class="filter-input" id="searchMain" type="text" placeholder="Search name or mobile...">
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label">District</label>
+                            <select class="filter-select" id="filterDistrict">
+                                <option value="">All Districts</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label">Constituency</label>
+                            <select class="filter-select" id="filterConst">
+                                <option value="">All Constituencies</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label">Role Category</label>
+                            <select class="filter-select" id="filterCategory">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label">Sentiment Status</label>
+                            <select class="filter-select" id="filterSentiment">
+                                <option value="">All Sentiments</option>
+                                <option value="Strong Support">Strong Support</option>
+                                <option value="Positive">Positive</option>
+                                <option value="Undecided">Undecided</option>
+                                <option value="Neutral">Neutral</option>
+                                <option value="Opposed">Opposed</option>
+                            </select>
+                        </div>
+                        <button class="btn-reset-3d" id="btnResetFilters">Reset Filters</button>
+                    </div>
+                </div>
+
+                <!-- Database metrics and grid controls -->
+                <div class="contacts-header-bar">
+                    <div class="contacts-count">
+                        Displaying <strong id="visibleCount">0</strong> of <strong id="totalCount">0</strong> constituents
+                    </div>
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="btnViewGrid" title="3D Grid Board">Board</button>
+                        <button class="view-btn" id="btnViewList" title="Data Table">List</button>
+                    </div>
+                </div>
+
+                <!-- Contacts list -->
+                <div id="contactsRoot"></div>
+
+                <!-- Interactive pagination buttons -->
+                <div class="pagination-container" id="paginationWrap"></div>
+
+            </div>
+
+            <!-- ─── APP SECTION: VISUAL ANALYTICS ─── -->
+            <div id="sectionAnalytics" style="display: none;">
+                <div class="panel-3d" style="margin-bottom: 24px;">
+                    <div class="panel-header">
+                        <h3>Detailed Profession Breakdown</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color:#64748b; margin-top: -10px; margin-bottom: 20px;">
+                        Interactive analysis of professions inside loaded constituent list.
+                    </p>
+                    <div id="analyticsProfessionGroup" style="display: flex; flex-direction: column; gap:14px;"></div>
+                </div>
+
+                <div class="panel-3d">
+                    <div class="panel-header">
+                        <h3>Loyalty Metric Indexing</h3>
+                    </div>
+                    <p style="font-size: 13.5px; color:#64748b; margin-top: -10px; margin-bottom: 20px;">
+                        This meter analyzes campaign loyalty percentages based on voter category.
+                    </p>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <div class="info-card">
+                            <h4 style="font-size: 13px;">Strong Campaign Supports</h4>
+                            <p style="font-size: 24px; font-weight:800; color:var(--emerald);" id="loyaltyStrongCount">0</p>
+                            <p style="font-size: 12.5px; color:#64748b;">Constituents fully committed to mobilization activities.</p>
+                        </div>
+                        <div class="info-card">
+                            <h4 style="font-size: 13px;">Key Targets (Undecided)</h4>
+                            <p style="font-size: 24px; font-weight:800; color:var(--gold-brass);" id="loyaltyUndecidedCount">0</p>
+                            <p style="font-size: 12.5px; color:#64748b;">Important leads needing targeted reachouts or dialogue.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── APP SECTION: EXCEL IMPORTER ─── -->
+            <div id="sectionUploader" style="display: none;">
+                <div class="excel-panel">
+                    <div class="panel-header">
+                        <h3>Campaign Excel Sheet Parser</h3>
+                        <a href="Political_CRM_Demo_50_Records.xlsx" download class="btn-action-3d">Download Template</a>
+                    </div>
+                    
+                    <div class="uploader-zone" id="dropZone">
+                        <input type="file" id="fileSelector" accept=".xlsx, .xls" style="display: none;">
+                        <div class="uploader-icon">📥</div>
+                        <div class="uploader-text">
+                            <h4>Drag & Drop Campaign Spreadsheets</h4>
+                            <p>Supports .xlsx and .xls formats (matches the 8-column layout schema)</p>
+                        </div>
+                        <div class="uploader-file-info" id="fileInfoLabel">Filename loaded.xlsx (50 Rows)</div>
+                    </div>
+
+                    <div style="margin-top:20px; font-size:13.5px; color:#64748b;">
+                        <strong>Note:</strong> Standard spreadsheet headers required: <code>ID</code>, <code>Name</code>, <code>Mobile</code>, <code>District</code>, <code>Constituency</code>, <code>Profession</code>, <code>Category</code>, <code>Address</code>.
+                    </div>
+                </div>
+
+                <div class="panel-3d" id="importerStatusCard" style="display: none;">
+                    <div class="panel-header">
+                        <h3>Parsed Excel Structure</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;" id="importerTable">
+                            <thead>
+                                <tr style="border-bottom:2px solid #cbd5e1; color:var(--royal-navy);">
+                                    <th style="padding:10px;">ID</th>
+                                    <th style="padding:10px;">Name</th>
+                                    <th style="padding:10px;">District</th>
+                                    <th style="padding:10px;">Constituency</th>
+                                    <th style="padding:10px;">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── PROFILE INSPECTOR (DETAIL PAGE) ─── -->
+            <div id="detail-page">
+                <button class="back-btn-3d" id="btnBack">
+                    <span>⬅️</span> Back to Dashboard
+                </button>
+                <div id="detailContent"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- CALLING DIALER SIMULATOR MODAL -->
+    <div class="modal" id="dialerModal">
+        <div class="dialer-box">
+            <div class="dialer-status-dot ringing" id="dialStatusDot"></div>
+            <div class="dialer-title" id="dialName">Ramesh Gowda</div>
+            <div class="dialer-number" id="dialMobile">+91 90544 78620</div>
+
+            <div class="dialer-device">
+                <div class="dialer-timer" id="dialTimer">00:00</div>
+                
+                <div class="dialer-log-form">
+                    <div>
+                        <label class="dialer-label">Call Outcome Disposition</label>
+                        <select class="dialer-select" id="dialOutcome">
+                            <option value="Call Answered">Call Answered (Success)</option>
+                            <option value="No Answer">No Answer / Missed Call</option>
+                            <option value="Busy">Line Busy</option>
+                            <option value="Switched Off">Switched Off / Not Reachable</option>
+                            <option value="Refused">Refused to talk</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="dialer-label">Political Support Sentiment</label>
+                        <select class="dialer-select" id="dialSentiment">
+                            <option value="Strong Support">🟢 Strong Support</option>
+                            <option value="Positive">🔵 Positive</option>
+                            <option value="Undecided">🟡 Undecided</option>
+                            <option value="Neutral">⚪ Neutral</option>
+                            <option value="Opposed">🔴 Opposed</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="dialer-label">Constituent Notes / Issues Raised</label>
+                        <textarea class="dialer-textarea" id="dialNotes" placeholder="Write call discussion notes..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dialer-actions">
+                <button class="btn-hangup" id="btnHangup">❌</button>
+                <button class="btn-hangup btn-connect" id="btnConnect" title="Connect Simulator">📞</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCRIPTS -->
+    <script>
+        // ─── STATIC DATA FALLBACK ────────────────────────────────────
+        const OFFLINE_CONTACTS = [
+            { id: 1, name: "Ramesh Gowda", mobile: "9054478620", district: "Mysuru", constituency: "Vijayapura City", profession: "Engineer", category: "Volunteer", address: "Ward 43, Tumakuru" },
+            { id: 2, name: "Shankar Patil", mobile: "9089129822", district: "Belagavi", constituency: "Varuna", profession: "Advocate", category: "Volunteer", address: "Ward 39, Vijayapura" },
+            { id: 3, name: "Mahesh Kumar", mobile: "9019825707", district: "Shivamogga", constituency: "Gokak", profession: "Contractor", category: "Influencer", address: "Ward 9, Mysuru" },
+            { id: 4, name: "Suresh Naik", mobile: "9084192523", district: "Mysuru", constituency: "Gokak", profession: "Doctor", category: "Volunteer", address: "Ward 39, Dharwad" },
+            { id: 5, name: "Prakash Shetty", mobile: "9047135540", district: "Belagavi", constituency: "Gokak", profession: "Farmer", category: "Volunteer", address: "Ward 2, Dharwad" },
+            { id: 6, name: "Manjunath Rao", mobile: "9072055706", district: "Belagavi", constituency: "Shimoga", profession: "Businessman", category: "Donor", address: "Ward 15, Mysuru" },
+            { id: 7, name: "Vinay Kulkarni", mobile: "9029008484", district: "Belagavi", constituency: "Tumakuru City", profession: "Teacher", category: "Volunteer", address: "Ward 7, Bengaluru" },
+            { id: 8, name: "Naveen Reddy", mobile: "9013916262", district: "Tumakuru", constituency: "Shimoga", profession: "Student", category: "VIP Contact", address: "Ward 29, Vijayapura" },
+            { id: 9, name: "Kiran Kumar", mobile: "9013283127", district: "Tumakuru", constituency: "Gokak", profession: "Doctor", category: "Booth Leader", address: "Ward 14, Mysuru" },
+            { id: 10, name: "Lokesh Bhat", mobile: "9080829037", district: "Tumakuru", constituency: "Varuna", profession: "Student", category: "Influencer", address: "Ward 44, Mysuru" },
+            { id: 11, name: "Raghu Hegde", mobile: "9082811480", district: "Belagavi", constituency: "Rajajinagar", profession: "Businessman", category: "Influencer", address: "Ward 15, Dharwad" },
+            { id: 12, name: "Arun Joshi", mobile: "9076752854", district: "Vijayapura", constituency: "Vijayapura City", profession: "Doctor", category: "Volunteer", address: "Ward 30, Vijayapura" },
+            { id: 13, name: "Sunil Patil", mobile: "9061334640", district: "Vijayapura", constituency: "Rajajinagar", profession: "Student", category: "Booth Leader", address: "Ward 33, Belagavi" },
+            { id: 14, name: "Deepak Rao", mobile: "9027951162", district: "Tumakuru", constituency: "Tumakuru City", profession: "Contractor", category: "Party Worker", address: "Ward 33, Shivamogga" },
+            { id: 15, name: "Harish Gowda", mobile: "9020015269", district: "Mandya", constituency: "Hubli", profession: "Engineer", category: "Donor", address: "Ward 1, Vijayapura" },
+            { id: 16, name: "Ravi Kumar", mobile: "9090836914", district: "Shivamogga", constituency: "Rajajinagar", profession: "Farmer", category: "Donor", address: "Ward 3, Bengaluru" },
+            { id: 17, name: "Ganesh Naik", mobile: "9060691329", district: "Shivamogga", constituency: "Rajajinagar", profession: "Contractor", category: "Volunteer", address: "Ward 35, Vijayapura" },
+            { id: 18, name: "Pradeep Shetty", mobile: "9072962089", district: "Tumakuru", constituency: "Shimoga", profession: "Doctor", category: "Donor", address: "Ward 22, Dharwad" },
+            { id: 19, name: "Santosh Patil", mobile: "9065753548", district: "Mandya", constituency: "Gokak", profession: "Teacher", category: "VIP Contact", address: "Ward 45, Tumakuru" },
+            { id: 20, name: "Vijay Kumar", mobile: "9030906401", district: "Bengaluru", constituency: "Varuna", profession: "Engineer", category: "VIP Contact", address: "Ward 16, Tumakuru" },
+            { id: 21, name: "Anil Reddy", mobile: "9035192993", district: "Tumakuru", constituency: "Tumakuru City", profession: "Teacher", category: "Donor", address: "Ward 12, Mandya" },
+            { id: 22, name: "Mohan Gowda", mobile: "9012396824", district: "Mandya", constituency: "Tumakuru City", profession: "Student", category: "Party Worker", address: "Ward 6, Tumakuru" },
+            { id: 23, name: "Nitin Rao", mobile: "9035032847", district: "Vijayapura", constituency: "Vijayapura City", profession: "Advocate", category: "Booth Leader", address: "Ward 10, Mandya" },
+            { id: 24, name: "Ajay Shetty", mobile: "9063581148", district: "Mysuru", constituency: "Gokak", profession: "Doctor", category: "Booth Leader", address: "Ward 30, Belagavi" },
+            { id: 25, name: "Umesh Patil", mobile: "9036676472", district: "Belagavi", constituency: "Vijayapura City", profession: "Doctor", category: "Volunteer", address: "Ward 12, Mysuru" },
+            { id: 26, name: "Basavaraj", mobile: "9094575796", district: "Bengaluru", constituency: "Hubli", profession: "Engineer", category: "VIP Contact", address: "Ward 19, Mysuru" },
+            { id: 27, name: "Shivakumar", mobile: "9071470168", district: "Mysuru", constituency: "Varuna", profession: "Student", category: "VIP Contact", address: "Ward 3, Bengaluru" },
+            { id: 28, name: "Yogesh Naik", mobile: "9087667542", district: "Bengaluru", constituency: "Varuna", profession: "Contractor", category: "VIP Contact", address: "Ward 43, Shivamogga" },
+            { id: 29, name: "Rakesh Gowda", mobile: "9068184907", district: "Mysuru", constituency: "Maddur", profession: "Student", category: "Booth Leader", address: "Ward 1, Mysuru" },
+            { id: 30, name: "Tejas Kumar", mobile: "9059421067", district: "Vijayapura", constituency: "Hubli", profession: "Contractor", category: "Volunteer", address: "Ward 11, Mysuru" },
+            { id: 31, name: "Pooja Sharma", mobile: "9046105297", district: "Tumakuru", constituency: "Tumakuru City", profession: "Teacher", category: "Booth Leader", address: "Ward 21, Mandya" },
+            { id: 32, name: "Priya Nair", mobile: "9077459913", district: "Dharwad", constituency: "Varuna", profession: "Engineer", category: "Influencer", address: "Ward 14, Belagavi" },
+            { id: 33, name: "Lakshmi Devi", mobile: "9024795194", district: "Dharwad", constituency: "Tumakuru City", profession: "Teacher", category: "Booth Leader", address: "Ward 15, Mandya" },
+            { id: 34, name: "Anitha Rao", mobile: "9059456469", district: "Mysuru", constituency: "Tumakuru City", profession: "Teacher", category: "VIP Contact", address: "Ward 4, Vijayapura" },
+            { id: 35, name: "Kavya Shetty", mobile: "9023223344", district: "Vijayapura", constituency: "Maddur", profession: "Advocate", category: "Volunteer", address: "Ward 28, Mandya" },
+            { id: 36, name: "Meena Patil", mobile: "9032426215", district: "Vijayapura", constituency: "Vijayapura City", profession: "Student", category: "Volunteer", address: "Ward 24, Mysuru" },
+            { id: 37, name: "Asha Gowda", mobile: "9091005465", district: "Tumakuru", constituency: "Rajajinagar", profession: "Doctor", category: "Influencer", address: "Ward 31, Belagavi" },
+            { id: 38, name: "Divya Kumar", mobile: "9035218029", district: "Tumakuru", constituency: "Hubli", profession: "Engineer", category: "Influencer", address: "Ward 42, Mysuru" },
+            { id: 39, name: "Shweta Reddy", mobile: "9034216069", district: "Mysuru", constituency: "Tumakuru City", profession: "Teacher", category: "Influencer", address: "Ward 28, Belagavi" },
+            { id: 40, name: "Nandini Bhat", mobile: "9040946435", district: "Dharwad", constituency: "Maddur", profession: "Student", category: "Influencer", address: "Ward 39, Tumakuru" },
+            { id: 41, name: "Geetha Rao", mobile: "9012787997", district: "Shivamogga", constituency: "Varuna", profession: "Businessman", category: "VIP Contact", address: "Ward 22, Bengaluru" },
+            { id: 42, name: "Bhavana Patil", mobile: "9039019095", district: "Vijayapura", constituency: "Rajajinagar", profession: "Businessman", category: "Donor", address: "Ward 18, Bengaluru" },
+            { id: 43, name: "Soumya Shetty", mobile: "9088161968", district: "Vijayapura", constituency: "Maddur", profession: "Businessman", category: "Donor", address: "Ward 39, Mandya" },
+            { id: 44, name: "Rekha Naik", mobile: "9080911098", district: "Vijayapura", constituency: "Varuna", profession: "Doctor", category: "Volunteer", address: "Ward 4, Mandya" },
+            { id: 45, name: "Sangeetha Kumar", mobile: "9051027019", district: "Bengaluru", constituency: "Maddur", profession: "Businessman", category: "Influencer", address: "Ward 26, Tumakuru" },
+            { id: 46, name: "Preethi Gowda", mobile: "9043054033", district: "Mysuru", constituency: "Tumakuru City", profession: "Farmer", category: "VIP Contact", address: "Ward 9, Shivamogga" },
+            { id: 47, name: "Roopa Patil", mobile: "9021933281", district: "Belagavi", constituency: "Maddur", profession: "Teacher", category: "Booth Leader", address: "Ward 1, Shivamogga" },
+            { id: 48, name: "Varsha Rao", mobile: "9016507012", district: "Vijayapura", constituency: "Tumakuru City", profession: "Engineer", category: "Donor", address: "Ward 28, Belagavi" },
+            { id: 49, name: "Chaitra Shetty", mobile: "9035761656", district: "Belagavi", constituency: "Varuna", profession: "Teacher", category: "Influencer", address: "Ward 2, Dharwad" },
+            { id: 50, name: "Anu Reddy", mobile: "9078500404", district: "Mandya", constituency: "Hubli", profession: "Student", category: "Influencer", address: "Ward 43, Vijayapura" },
+        ];
+
+        // ─── STATE MANAGEMENT ─────────────────────────────────────────
+        let activeContacts = [];
+        let filteredContacts = [];
+        let selectedDistrictFilter = null;
+        let selectedConstituencyFilter = null;
+        let viewMode = 'grid'; // 'grid' | 'list'
+        let currentTab = 'dashboard'; // 'dashboard' | 'contacts' | 'analytics' | 'uploader'
+        let paginationPage = 1;
+        const PAGE_SIZE = 9;
+
+        // In-memory sessions tracking
+        let tasksStore = {}; // id -> [{text, completed}]
+        let timelineStore = {}; // id -> [{time, content, type, desc}]
+        
+        // Active calling simulation state
+        let dialTimerInterval = null;
+        let dialTimerCount = 0;
+        let activeDialedContactId = null;
+
+        // Custom avatar palette colors
+        const PALETTE = ['#0a192f', '#1b3b6f', '#065f46', '#701a75', '#854d0e', '#9f1239', '#0369a1', '#581c87'];
+        const colorForName = (name) => PALETTE[name.charCodeAt(0) % PALETTE.length];
+
+        const roleBadges = {
+            'Volunteer': 'badge-volunteer',
+            'Donor': 'badge-donor',
+            'Influencer': 'badge-influencer',
+            'VIP Contact': 'badge-vip',
+            'Booth Leader': 'badge-booth',
+            'Party Worker': 'badge-party',
+        };
+
+        // ─── UTILITIES & HELPERS ─────────────────────────────────────
+        function showNotification(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-message ${type}`;
+            toast.innerHTML = `<span>🔔</span> <div>${msg}</div>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 50);
+
+            setTimeout(() => {
+                toast.style.animation = 'toastIn 0.3s ease reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        const getInitials = (name) => name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+        // ─── SPREADSHEET INITIAL ENGINE ─────────────────────────────
+        async function loadExcelDatabase() {
+            try {
+                // Fetch local xlsx file. If running under double-click file:///, this will fail.
+                const response = await fetch('Political_CRM_Demo_50_Records.xlsx');
+                if (!response.ok) throw new Error("File fetch failure (CORS/Path)");
+                const buffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const records = XLSX.utils.sheet_to_json(sheet);
+                
+                if (records && records.length > 0) {
+                    processAndStoreData(records);
+                    showNotification("Dynamic Campaign Spreadsheet loaded successfully!", "success");
+                } else {
+                    throw new Error("No data inside sheet");
+                }
+            } catch (err) {
+                console.warn("Local fetch warning, initializing offline CRM mock dataset.", err);
+                processAndStoreData(OFFLINE_CONTACTS);
+                showNotification("Running offline local sandbox database", "info");
+            }
+        }
+
+        function processAndStoreData(rawRecords) {
+            activeContacts = rawRecords.map(item => {
+                const id = parseInt(item.id || item.ID || 1);
+                // Ensure name and mobile are correctly mapped from different casings
+                const name = item.name || item.Name || "Unknown Contact";
+                const mobile = String(item.mobile || item.Mobile || "9900000000");
+                const district = item.district || item.District || "Unassigned District";
+                const constituency = item.constituency || item.Constituency || "Unassigned Constituency";
+                const profession = item.profession || item.Profession || "General";
+                const category = item.category || item.Category || "Volunteer";
+                const address = item.address || item.Address || "Ward Area";
+
+                // Synthesize sentiment based on category for realistic visual charts
+                let sentiment = "Undecided";
+                let loyalty = 50;
+
+                if (["Volunteer", "Party Worker", "Booth Leader"].includes(category)) {
+                    sentiment = "Strong Support";
+                    loyalty = 85 + (id % 15);
+                } else if (category === "Donor") {
+                    sentiment = "Positive";
+                    loyalty = 70 + (id % 15);
+                } else if (category === "VIP Contact") {
+                    sentiment = id % 2 === 0 ? "Positive" : "Undecided";
+                    loyalty = sentiment === "Positive" ? 75 : 60;
+                } else if (category === "Influencer") {
+                    sentiment = id % 3 === 0 ? "Opposed" : (id % 2 === 0 ? "Positive" : "Undecided");
+                    loyalty = sentiment === "Opposed" ? 25 : (sentiment === "Positive" ? 70 : 55);
+                }
+
+                // Hydrate interaction timelines & checklists if not yet present
+                if (!tasksStore[id]) {
+                    tasksStore[id] = [
+                        { text: `Invite ${name.split(' ')[0]} to local booth campaign`, completed: false },
+                        { text: "Verify voter card and address coordinates", completed: false },
+                        { text: "Send latest MLA development progress pamphlet", completed: true }
+                    ];
+                }
+
+                if (!timelineStore[id]) {
+                    timelineStore[id] = [
+                        { time: "May 28, 2026", content: "Constituent registered in local ward CRM", type: "system", desc: "Initialized via Excel Sync" },
+                        { time: "June 01, 2026", content: "Completed background verification audit", type: "system", desc: "Status set to Active" }
+                    ];
+                }
+
+                return { id, name, mobile, district, constituency, profession, category, address, sentiment, loyalty };
+            });
+
+            // Initial Filter Sync
+            populateFilters();
+            applyFiltersAndSync();
+        }
+
+        // ─── FILTERS SYNCHRONIZER ─────────────────────────────────────
+        function populateFilters() {
+            const unique = (key) => [...new Set(activeContacts.map(c => c[key]))].sort();
+            
+            const dropDistrict = document.getElementById('filterDistrict');
+            const dropConst = document.getElementById('filterConst');
+            const dropCat = document.getElementById('filterCategory');
+
+            // Save values to restore after repopulate
+            const prevDist = dropDistrict.value;
+            const prevConst = dropConst.value;
+            const prevCat = dropCat.value;
+
+            // Clear values
+            dropDistrict.innerHTML = '<option value="">All Districts</option>';
+            dropConst.innerHTML = '<option value="">All Constituencies</option>';
+            dropCat.innerHTML = '<option value="">All Categories</option>';
+
+            unique('district').forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d;
+                dropDistrict.appendChild(opt);
+            });
+            
+            // Filter constituency options based on active district
+            const activeDist = selectedDistrictFilter || prevDist;
+            const availableContacts = activeDist ? activeContacts.filter(c => c.district === activeDist) : activeContacts;
+            const availableConsts = [...new Set(availableContacts.map(c => c.constituency))].sort();
+
+            availableConsts.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                dropConst.appendChild(opt);
+            });
+            
+            unique('category').forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                dropCat.appendChild(opt);
+            });
+
+            // Restore previous values
+            if (prevDist) dropDistrict.value = prevDist;
+            if (prevConst) dropConst.value = prevConst;
+            if (prevCat) dropCat.value = prevCat;
+
+            // 1. Populate District Control Board
+            const distBoard = document.getElementById('districtBoard');
+            distBoard.innerHTML = '';
+
+            // ALL DISTRICTS button
+            const allDistBtn = document.createElement('button');
+            allDistBtn.className = 'btn-action-3d ' + (selectedDistrictFilter === null ? 'btn-gold-3d' : '');
+            allDistBtn.style.padding = '8px 14px';
+            allDistBtn.style.fontSize = '12px';
+            allDistBtn.textContent = '🗺️ ALL DISTRICTS';
+            allDistBtn.onclick = () => selectDistrictFilter(null);
+            distBoard.appendChild(allDistBtn);
+
+            unique('district').forEach(d => {
+                const count = activeContacts.filter(c => c.district === d).length;
+                const btn = document.createElement('button');
+                btn.className = `btn-action-3d ${selectedDistrictFilter === d ? '' : 'btn-gold-3d'}`;
+                btn.style.padding = '8px 14px';
+                btn.style.fontSize = '12px';
+                btn.textContent = `${d} (${count})`;
+                btn.onclick = () => selectDistrictFilter(d);
+                distBoard.appendChild(btn);
+            });
+
+            // 2. Populate Interactive region blocks (booths) in Dashboard
+            const board = document.getElementById('constituencyBoard');
+            board.innerHTML = '';
+            
+            // Add a global reset block
+            const allBtn = document.createElement('button');
+            allBtn.className = 'btn-action-3d ' + (selectedConstituencyFilter === null ? 'btn-gold-3d' : '');
+            allBtn.style.padding = '8px 14px';
+            allBtn.style.fontSize = '12px';
+            allBtn.textContent = '📍 ALL REGIONS';
+            allBtn.onclick = () => selectConstituencyFilter(null);
+            board.appendChild(allBtn);
+
+            availableConsts.forEach(con => {
+                const count = availableContacts.filter(c => c.constituency === con).length;
+                const btn = document.createElement('button');
+                btn.className = `btn-action-3d ${selectedConstituencyFilter === con ? '' : 'btn-gold-3d'}`;
+                btn.style.padding = '8px 14px';
+                btn.style.fontSize = '12px';
+                btn.textContent = `${con} (${count})`;
+                btn.onclick = () => selectConstituencyFilter(con);
+                board.appendChild(btn);
+            });
+        }
+
+        function selectDistrictFilter(d) {
+            selectedDistrictFilter = d;
+            selectedConstituencyFilter = null; // reset constituency on district change
+            document.getElementById('filterDistrict').value = d || "";
+            document.getElementById('filterConst').value = "";
+            
+            const subtitle = document.getElementById('pageSubtitle');
+            if (d) {
+                subtitle.textContent = `Constituency Campaign Panel - ${d} District`;
+                showNotification(`Database switch: ${d} District active`, "success");
+            } else {
+                subtitle.textContent = `Real-time Campaign and Constituency Management Panel`;
+                showNotification("Database reset: All Districts active", "info");
+            }
+            
+            populateFilters();
+            applyFiltersAndSync();
+        }
+
+        function selectConstituencyFilter(con) {
+            selectedConstituencyFilter = con;
+            document.getElementById('filterConst').value = con || "";
+            showNotification(con ? `Filtering view for region: ${con}` : "Resetting region filters", "info");
+            populateFilters();
+            applyFiltersAndSync();
+        }
+
+        // Apply filters & trigger dashboard chart metrics reload
+        function applyFiltersAndSync() {
+            const searchVal = document.getElementById('searchMain').value.toLowerCase().trim();
+            const filterDist = document.getElementById('filterDistrict').value;
+            const filterCon = document.getElementById('filterConst').value;
+            const filterCat = document.getElementById('filterCategory').value;
+            const filterSent = document.getElementById('filterSentiment').value;
+
+            // Synchronize dashboard region selected state
+            selectedDistrictFilter = filterDist || null;
+            selectedConstituencyFilter = filterCon || null;
+
+            filteredContacts = activeContacts.filter(c => {
+                const matchesSearch = !searchVal || c.name.toLowerCase().includes(searchVal) || c.mobile.includes(searchVal);
+                const matchesDist = !filterDist || c.district === filterDist;
+                const matchesCon = !filterCon || c.constituency === filterCon;
+                const matchesCat = !filterCat || c.category === filterCat;
+                const matchesSent = !filterSent || c.sentiment === filterSent;
+
+                return matchesSearch && matchesDist && matchesCon && matchesCat && matchesSent;
+            });
+
+            paginationPage = 1;
+            recalculateMetrics();
+            renderContactsBoard();
+        }
+
+        // ─── RE-CALCULATE METRICS & SVG RENDERERS ────────────────────
+        function recalculateMetrics() {
+            // Stats Grid Counters
+            const total = filteredContacts.length;
+            const volunteers = filteredContacts.filter(c => c.category === 'Volunteer').length;
+            const vipCount = filteredContacts.filter(c => ['VIP Contact', 'Influencer'].includes(c.category)).length;
+            const regions = [...new Set(filteredContacts.map(c => c.constituency))].length;
+
+            document.getElementById('statTotalVal').textContent = total;
+            document.getElementById('statVolunteerVal').textContent = volunteers;
+            document.getElementById('statVipVal').textContent = vipCount;
+            document.getElementById('statCoverageVal').textContent = regions;
+
+            document.getElementById('visibleCount').textContent = total;
+            document.getElementById('totalCount').textContent = activeContacts.length;
+
+            // Loyalty count indicators for visual analytics tab
+            const strongSupportCount = filteredContacts.filter(c => c.sentiment === 'Strong Support').length;
+            const undecidedCount = filteredContacts.filter(c => c.sentiment === 'Undecided').length;
+            document.getElementById('loyaltyStrongCount').textContent = strongSupportCount;
+            document.getElementById('loyaltyUndecidedCount').textContent = undecidedCount;
+
+            // Sentiment Score Ratio calculation (Percentage)
+            const positiveItems = filteredContacts.filter(c => ["Strong Support", "Positive"].includes(c.sentiment)).length;
+            const ratio = total > 0 ? Math.round((positiveItems / total) * 100) : 0;
+            
+            // Set dial scorecard
+            document.getElementById('gaugeScore').textContent = `${ratio}%`;
+            
+            // Update detail counts
+            document.getElementById('gaugeDetailText').textContent = `${positiveItems} of ${total} constituents supporting`;
+
+            // Update gauge title label based on filter context
+            const activeDist = document.getElementById('filterDistrict').value;
+            const activeCon = document.getElementById('filterConst').value;
+            
+            if (activeCon) {
+                document.getElementById('gaugeLabel').textContent = `Voter Support in ${activeCon}`;
+            } else if (activeDist) {
+                document.getElementById('gaugeLabel').textContent = `Voter Support in ${activeDist}`;
+            } else {
+                document.getElementById('gaugeLabel').textContent = `Overall Voter Support`;
+            }
+            
+            // Animate SVG Gauge needle (angle maps from -90 to +90 degrees)
+            const angle = -90 + (ratio / 100) * 180;
+            document.getElementById('gaugeNeedle').setAttribute('transform', `rotate(${angle} 110 110)`);
+
+            // Category Bar chart updates
+            renderRoleChartSvg();
+
+            // Profession lists updates
+            renderProfessionAnalytics();
+        }
+
+        // SVG Role Column Bar Chart Creator
+        function renderRoleChartSvg() {
+            const container = document.getElementById('chartBarsGroup');
+            container.innerHTML = '';
+
+            const categories = ['Volunteer', 'VIP Contact', 'Influencer', 'Donor', 'Booth Leader', 'Party Worker'];
+            const categoryCounts = categories.map(cat => filteredContacts.filter(c => c.category === cat).length);
+            
+            const maxVal = Math.max(...categoryCounts, 5);
+            
+            // Recalculate Y scale labels
+            document.getElementById('chartY3').textContent = Math.round(maxVal);
+            document.getElementById('chartY2').textContent = Math.round(maxVal * 0.66);
+            document.getElementById('chartY1').textContent = Math.round(maxVal * 0.33);
+
+            const chartWidth = 480; // approximate width limit
+            const barWidth = 40;
+            const spacing = 32;
+            const bottomY = 150; // SVG zero axis line
+
+            categories.forEach((cat, index) => {
+                const count = categoryCounts[index];
+                // Height mapping
+                const barHeight = count > 0 ? (count / maxVal) * 120 : 0;
+                const x = 50 + index * (barWidth + spacing);
+                const y = bottomY - barHeight;
+
+                // Color gradients based on roles
+                let fill = '#3b82f6';
+                if (cat === 'Volunteer') fill = '#10b981';
+                else if (cat === 'VIP Contact') fill = '#d4af37';
+                else if (cat === 'Influencer') fill = '#8b5cf6';
+                else if (cat === 'Booth Leader') fill = '#f43f5e';
+                else if (cat === 'Party Worker') fill = '#db2777';
+
+                // Bar Group representing column
+                const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                // Main column rectangle
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", x);
+                rect.setAttribute("y", y);
+                rect.setAttribute("width", barWidth);
+                rect.setAttribute("height", barHeight);
+                rect.setAttribute("fill", fill);
+                rect.setAttribute("rx", 4);
+                rect.setAttribute("class", "bar-3d");
+                
+                // Hover text label
+                const txtVal = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txtVal.setAttribute("x", x + barWidth / 2);
+                txtVal.setAttribute("y", y - 6);
+                txtVal.setAttribute("font-size", "11");
+                txtVal.setAttribute("font-weight", "800");
+                txtVal.setAttribute("fill", "var(--royal-navy)");
+                txtVal.setAttribute("text-anchor", "middle");
+                txtVal.textContent = count;
+
+                // Column base label
+                const txtLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txtLabel.setAttribute("x", x + barWidth / 2);
+                txtLabel.setAttribute("y", bottomY + 18);
+                txtLabel.setAttribute("font-size", "10");
+                txtLabel.setAttribute("font-weight", "600");
+                txtLabel.setAttribute("fill", "#64748b");
+                txtLabel.setAttribute("text-anchor", "middle");
+                txtLabel.textContent = cat.split(' ')[0]; // short text
+
+                group.appendChild(rect);
+                group.appendChild(txtVal);
+                group.appendChild(txtLabel);
+                container.appendChild(group);
+            });
+        }
+
+        // Profession list visualization in Analytics tab
+        function renderProfessionAnalytics() {
+            const container = document.getElementById('analyticsProfessionGroup');
+            container.innerHTML = '';
+
+            const professions = [...new Set(filteredContacts.map(c => c.profession))];
+            const counts = professions.map(p => ({
+                name: p,
+                count: filteredContacts.filter(c => c.profession === p).length
+            })).sort((a,b) => b.count - a.count);
+
+            const max = counts[0] ? counts[0].count : 1;
+
+            if (counts.length === 0) {
+                container.innerHTML = '<p style="color:#64748b;">No details available.</p>';
+                return;
+            }
+
+            counts.slice(0, 5).forEach(item => {
+                const percent = Math.round((item.count / filteredContacts.length) * 100);
+                const widthPercent = (item.count / max) * 100;
+
+                const row = document.createElement('div');
+                row.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-size:13.5px; font-weight:600; margin-bottom:4px;">
+                        <span>💼 ${item.name}</span>
+                        <span>${item.count} constituents (${percent}%)</span>
+                    </div>
+                    <div style="height:10px; background:#e2e8f0; border-radius:10px; overflow:hidden;">
+                        <div style="height:100%; width:${widthPercent}%; background:var(--royal-navy); border-radius:10px;"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // ─── DYNAMIC TILT CONTROLS FOR 3D EFFECT ─────────────────────
+        function apply3DTiltEffect(card) {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Centering axis offset mapping
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const deltaX = x - centerX;
+                const deltaY = y - centerY;
+                
+                // Maximum degrees rotation limits
+                const rotationX = -(deltaY / centerY) * 8;
+                const rotationY = (deltaX / centerX) * 8;
+                
+                card.style.setProperty('--rx', `${rotationX}deg`);
+                card.style.setProperty('--ry', `${rotationY}deg`);
+                card.style.setProperty('--s', `1.03`);
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.setProperty('--rx', `0deg`);
+                card.style.setProperty('--ry', `0deg`);
+                card.style.setProperty('--s', `1`);
+            });
+        }
+
+        // ─── RENDER CONTACTS BOARD ───────────────────────────────────
+        function renderContactsBoard() {
+            const container = document.getElementById('contactsRoot');
+            const start = (paginationPage - 1) * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            const pageRecords = filteredContacts.slice(start, end);
+
+            if (filteredContacts.length === 0) {
+                container.className = "";
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <h3>No matching constituents found</h3>
+                        <p>Adjust filters or search keywords above.</p>
+                    </div>`;
+                document.getElementById('paginationWrap').innerHTML = '';
+                return;
+            }
+
+            if (viewMode === 'grid') {
+                container.className = "contacts-grid";
+                container.innerHTML = pageRecords.map(renderGridCard).join('');
+                // Attach dynamic 3D Tilt handlers
+                container.querySelectorAll('.contact-card').forEach(apply3DTiltEffect);
+            } else {
+                container.className = "contacts-list-view";
+                container.innerHTML = pageRecords.map(renderListRow).join('');
+            }
+
+            renderPaginationWrap();
+        }
+
+        function renderGridCard(c) {
+            const avatarColor = colorForName(c.name);
+            const badgeClass = roleBadges[c.category] || '';
+            const initial = getInitials(c.name);
+
+            // Sentiment Color indicator dots
+            let sentimentDot = '⚪';
+            if (c.sentiment === 'Strong Support') sentimentDot = '🟢';
+            else if (c.sentiment === 'Positive') sentimentDot = '🔵';
+            else if (c.sentiment === 'Undecided') sentimentDot = '🟡';
+            else if (c.sentiment === 'Opposed') sentimentDot = '🔴';
+
+            return `
+                <div class="contact-card" onclick="openProfileInspector(${c.id})">
+                    <div class="card-top">
+                        <div class="card-avatar" style="background:${avatarColor}">${initial}</div>
+                        <div class="card-name-wrap">
+                            <h4 class="card-name">${c.name}</h4>
+                            <p class="card-subtitle">ID: #${String(c.id).padStart(3, '0')} · ${c.district}</p>
+                        </div>
+                        <span class="category-badge ${badgeClass}">${c.category}</span>
+                    </div>
+                    <hr class="card-divider">
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span>📱</span>
+                            <span>+91 ${c.mobile}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>📍</span>
+                            <span>${c.constituency}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>💼</span>
+                            <span>${c.profession}</span>
+                        </div>
+                        <div class="loyalty-indicator-wrap">
+                            <span class="loyalty-text">Loyalty:</span>
+                            <div class="loyalty-track">
+                                <div class="loyalty-bar" style="width:${c.loyalty}%"></div>
+                            </div>
+                            <span class="loyalty-text">${c.loyalty}%</span>
+                        </div>
+                        <div class="detail-row" style="margin-top: 4px;">
+                            <span style="font-size:12px;">Support Sentiment:</span>
+                            <span style="font-weight: 700; font-size:12px; margin-left: auto;">${sentimentDot} ${c.sentiment}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-details-3d" onclick="event.stopPropagation(); openProfileInspector(${c.id})">
+                            Open Dashboard Profile
+                        </button>
+                        <button class="btn-call-3d" title="Call Constituent" onclick="event.stopPropagation(); triggerCallModal(${c.id})">
+                            📞
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderListRow(c) {
+            const avatarColor = colorForName(c.name);
+            const badgeClass = roleBadges[c.category] || '';
+            const initial = getInitials(c.name);
+
+            return `
+                <div class="list-row" onclick="openProfileInspector(${c.id})">
+                    <div class="list-avatar" style="background:${avatarColor}">${initial}</div>
+                    <div class="list-info">
+                        <div class="list-name">${c.name}</div>
+                        <div class="list-detail">📱 +91 ${c.mobile}</div>
+                        <div class="list-detail">📍 ${c.constituency} (${c.district})</div>
+                        <div class="list-detail">💼 ${c.profession}</div>
+                    </div>
+                    <span class="category-badge ${badgeClass}">${c.category}</span>
+                    <button class="btn-call-3d" style="margin-left: 10px;" title="Call Constituent" onclick="event.stopPropagation(); triggerCallModal(${c.id})">
+                        📞
+                    </button>
+                </div>
+            `;
+        }
+
+        // Render standard page indicators
+        function renderPaginationWrap() {
+            const totalPages = Math.ceil(filteredContacts.length / PAGE_SIZE);
+            const wrap = document.getElementById('paginationWrap');
+            wrap.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // Prev button
+            const prev = document.createElement('button');
+            prev.className = 'page-btn-3d';
+            prev.textContent = '◀';
+            prev.disabled = paginationPage === 1;
+            prev.onclick = () => goPage(paginationPage - 1);
+            wrap.appendChild(prev);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || Math.abs(i - paginationPage) <= 1) {
+                    const btn = document.createElement('button');
+                    btn.className = `page-btn-3d ${i === paginationPage ? 'active' : ''}`;
+                    btn.textContent = i;
+                    btn.onclick = () => goPage(i);
+                    wrap.appendChild(btn);
+                } else if (Math.abs(i - paginationPage) === 2) {
+                    const dots = document.createElement('span');
+                    dots.textContent = '...';
+                    dots.style.margin = '0 4px';
+                    dots.style.color = '#94a3b8';
+                    wrap.appendChild(dots);
+                }
+            }
+
+            // Next button
+            const next = document.createElement('button');
+            next.className = 'page-btn-3d';
+            next.textContent = '▶';
+            next.disabled = paginationPage === totalPages;
+            next.onclick = () => goPage(paginationPage + 1);
+            wrap.appendChild(next);
+        }
+
+        function goPage(page) {
+            paginationPage = page;
+            renderContactsBoard();
+            // Scroll back
+            document.getElementById('contactsRoot').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ─── PROFILE INSPECTOR WINDOWS (DETAIL) ──────────────────────
+        function openProfileInspector(id) {
+            const c = activeContacts.find(x => x.id === id);
+            if (!c) return;
+
+            const avatarColor = colorForName(c.name);
+            const initial = getInitials(c.name);
+
+            const detailPage = document.getElementById('detail-page');
+            const listPage = document.getElementById('list-page');
+            const detailContent = document.getElementById('detailContent');
+
+            // Hide main panels and show inspector
+            document.querySelectorAll('.nav-item').forEach(itm => itm.classList.remove('active'));
+            hideAllAppSections();
+
+            // Populate detailed layout profile
+            detailContent.innerHTML = `
+                <div class="profile-hero">
+                    <div class="profile-avatar-3d" style="background:${avatarColor}">${initial}</div>
+                    <div class="profile-title-info">
+                        <h2>${c.name}</h2>
+                        <div class="profile-metadata">
+                            <span>🆔 ID: #${String(c.id).padStart(3, '0')}</span>
+                            <span>📱 Mobile: +91 ${c.mobile}</span>
+                            <span>💼 Role: ${c.category}</span>
+                        </div>
+                        <div class="profile-badges">
+                            <span class="profile-badge">${c.district} District</span>
+                            <span class="profile-badge">${c.constituency} Constituency</span>
+                            <span class="profile-badge">Loyalty Match: ${c.loyalty}%</span>
+                            <span class="profile-badge">Sentiment: ${c.sentiment}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-grid">
+                    
+                    <!-- Information sheet -->
+                    <div class="info-card">
+                        <h4>Constituent Dossier</h4>
+                        <div class="info-row">
+                            <div class="info-icon-box">👤</div>
+                            <div>
+                                <div class="info-label">Full Name</div>
+                                <div class="info-value">${c.name}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-icon-box">📞</div>
+                            <div>
+                                <div class="info-label">Mobile Number</div>
+                                <div class="info-value">+91 ${c.mobile}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-icon-box">📍</div>
+                            <div>
+                                <div class="info-label">Home Address</div>
+                                <div class="info-value">${c.address}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-icon-box">💼</div>
+                            <div>
+                                <div class="info-label">Registered Profession</div>
+                                <div class="info-value">${c.profession}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-actions-bar">
+                            <button class="btn-action-3d" style="flex:1; justify-content:center;" onclick="triggerCallModal(${c.id})">
+                                📞 Call Constituent
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Persistent Task Checklist -->
+                    <div class="info-card">
+                        <h4>Constituent Action Tasks</h4>
+                        <div class="todo-container">
+                            <div class="todo-input-row">
+                                <input class="filter-input" style="background:#fff; border-color:#cbd5e1;" type="text" id="newTodoVal" placeholder="Enter custom goal target task...">
+                                <button class="btn-action-3d" onclick="addTodoTask(${c.id})">Add Task</button>
+                            </div>
+                            <div class="todo-list" id="todoListRoot"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="profile-grid">
+                    
+                    <!-- Action Logs/Timeline -->
+                    <div class="info-card" style="grid-column: span 2;">
+                        <h4>Campaign Interaction History Timeline</h4>
+                        <div class="timeline" id="timelineRoot"></div>
+                    </div>
+
+                </div>
+            `;
+
+            renderTodoTasks(c.id);
+            renderTimeline(c.id);
+
+            detailPage.classList.add('visible');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ─── PERSISTENT TASKS checklist controller ───────────────────
+        function renderTodoTasks(id) {
+            const list = tasksStore[id] || [];
+            const root = document.getElementById('todoListRoot');
+            root.innerHTML = '';
+
+            if (list.length === 0) {
+                root.innerHTML = '<p style="color:#64748b; font-size:13px; font-style:italic;">No tasks currently pending.</p>';
+                return;
+            }
+
+            list.forEach((item, index) => {
+                const el = document.createElement('div');
+                el.className = `todo-item ${item.completed ? 'completed' : ''}`;
+                el.innerHTML = `
+                    <div class="todo-item-check" onclick="toggleTodoState(${id}, ${index})">
+                        <input type="checkbox" ${item.completed ? 'checked' : ''} style="cursor:pointer;">
+                        <span class="todo-text">${item.text}</span>
+                    </div>
+                    <button class="todo-delete-btn" onclick="deleteTodoTask(${id}, ${index})" title="Delete Target">🗑️</button>
+                `;
+                root.appendChild(el);
+            });
+        }
+
+        function toggleTodoState(id, index) {
+            tasksStore[id][index].completed = !tasksStore[id][index].completed;
+            renderTodoTasks(id);
+            showNotification("Task status updated", "info");
+        }
+
+        function addTodoTask(id) {
+            const inp = document.getElementById('newTodoVal');
+            const val = inp.value.trim();
+            if (!val) return;
+
+            if (!tasksStore[id]) tasksStore[id] = [];
+            tasksStore[id].push({ text: val, completed: false });
+            inp.value = '';
+
+            renderTodoTasks(id);
+            showNotification("Successfully added task to checklist", "success");
+        }
+
+        function deleteTodoTask(id, index) {
+            tasksStore[id].splice(index, 1);
+            renderTodoTasks(id);
+            showNotification("Task removed", "warning");
+        }
+
+        // Timeline renderer
+        function renderTimeline(id) {
+            const logs = timelineStore[id] || [];
+            const root = document.getElementById('timelineRoot');
+            root.innerHTML = '';
+
+            if (logs.length === 0) {
+                root.innerHTML = '<p style="color:#64748b; font-style:italic;">No interactions logged yet.</p>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const el = document.createElement('div');
+                el.className = `timeline-node ${log.type || ''}`;
+                el.innerHTML = `
+                    <div class="timeline-time">${log.time}</div>
+                    <div class="timeline-content">${log.content}</div>
+                    ${log.desc ? `<div class="timeline-desc">${log.desc}</div>` : ''}
+                `;
+                root.appendChild(el);
+            });
+        }
+
+        // Close details back to list
+        document.getElementById('btnBack').addEventListener('click', () => {
+            document.getElementById('detail-page').classList.remove('visible');
+            
+            // Re-activate active nav tab
+            document.getElementById('menuContacts').classList.add('active');
+            showAppSection('contacts');
+        });
+
+        // ─── DIALER SIMULATOR MODAL CONTROLS ─────────────────────────
+        function triggerCallModal(id) {
+            const c = activeContacts.find(x => x.id === id);
+            if (!c) return;
+
+            activeDialedContactId = id;
+            document.getElementById('dialName').textContent = c.name;
+            document.getElementById('dialMobile').textContent = `+91 ${c.mobile}`;
+            document.getElementById('dialOutcome').value = "Call Answered";
+            document.getElementById('dialSentiment').value = c.sentiment;
+            document.getElementById('dialNotes').value = "";
+
+            // Reset Timer state
+            dialTimerCount = 0;
+            document.getElementById('dialTimer').textContent = "00:00";
+            
+            // Visual Ringing State
+            const dot = document.getElementById('dialStatusDot');
+            dot.className = "dialer-status-dot ringing";
+            
+            // Toggle connect buttons
+            document.getElementById('btnConnect').style.display = 'flex';
+            document.getElementById('btnHangup').title = "Cancel Ringing";
+
+            const modal = document.getElementById('dialerModal');
+            modal.classList.add('visible');
+        }
+
+        // Connect button (Accepts dial simulation)
+        document.getElementById('btnConnect').addEventListener('click', () => {
+            const dot = document.getElementById('dialStatusDot');
+            dot.className = "dialer-status-dot connected";
+            document.getElementById('btnConnect').style.display = 'none';
+            document.getElementById('btnHangup').title = "Hang Up & Save";
+
+            showNotification("Simulator connected: Call active", "success");
+
+            // Start clock timer
+            if (dialTimerInterval) clearInterval(dialTimerInterval);
+            dialTimerInterval = setInterval(() => {
+                dialTimerCount++;
+                const min = String(Math.floor(dialTimerCount / 60)).padStart(2, '0');
+                const sec = String(dialTimerCount % 60).padStart(2, '0');
+                document.getElementById('dialTimer').textContent = `${min}:${sec}`;
+            }, 1000);
+        });
+
+        // Hangup & Save logs
+        document.getElementById('btnHangup').addEventListener('click', () => {
+            clearInterval(dialTimerInterval);
+            dialTimerInterval = null;
+
+            const modal = document.getElementById('dialerModal');
+            modal.classList.remove('visible');
+
+            // Log details inside Store arrays
+            const outcome = document.getElementById('dialOutcome').value;
+            const sentiment = document.getElementById('dialSentiment').value;
+            const notes = document.getElementById('dialNotes').value.trim() || "No additional call log notes.";
+            
+            const cId = activeDialedContactId;
+            const contact = activeContacts.find(c => c.id === cId);
+
+            if (contact) {
+                // Update sentiment and loyalty in memory
+                contact.sentiment = sentiment;
+                if (sentiment === 'Strong Support') contact.loyalty = Math.min(contact.loyalty + 8, 100);
+                else if (sentiment === 'Opposed') contact.loyalty = Math.max(contact.loyalty - 12, 10);
+                else if (sentiment === 'Positive') contact.loyalty = Math.min(contact.loyalty + 4, 90);
+
+                // Add log entry to Timeline history
+                const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + " " + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                timelineStore[cId].unshift({
+                    time: dateStr,
+                    content: `Logged Tele-Call Outcome: [${outcome}]`,
+                    type: 'call',
+                    desc: `Sentiment set to [${sentiment}]. Notes: "${notes}"`
+                });
+
+                showNotification(`Call logged for ${contact.name}! Dashboard updated.`, "success");
+            }
+
+            // Sync metrics and boards
+            applyFiltersAndSync();
+
+            // If profile inspector is currently open, refresh its view
+            const detailPage = document.getElementById('detail-page');
+            if (detailPage.classList.contains('visible') && activeDialedContactId) {
+                openProfileInspector(activeDialedContactId);
+            }
+            
+            activeDialedContactId = null;
+        });
+
+        // ─── NAV TABS CONTROLLER ─────────────────────────────────────
+        function hideAllAppSections() {
+            document.getElementById('sectionDashboard').style.display = 'none';
+            document.getElementById('sectionContacts').style.display = 'none';
+            document.getElementById('sectionAnalytics').style.display = 'none';
+            document.getElementById('sectionUploader').style.display = 'none';
+            document.getElementById('detail-page').classList.remove('visible');
+        }
+
+        function showAppSection(sectionName) {
+            hideAllAppSections();
+            currentTab = sectionName;
+            
+            // Sync page title indicators
+            const title = document.getElementById('pageTitle');
+            const sub = document.getElementById('pageSubtitle');
+
+            if (sectionName === 'dashboard') {
+                document.getElementById('sectionDashboard').style.display = 'block';
+                title.textContent = "Executive CRM Dashboard";
+                sub.textContent = "Real-time Campaign and Constituency Management Panel";
+            } else if (sectionName === 'contacts') {
+                document.getElementById('sectionContacts').style.display = 'block';
+                title.textContent = "Constituency Databases";
+                sub.textContent = "Active Filter Grid and Communication Logs";
+            } else if (sectionName === 'analytics') {
+                document.getElementById('sectionAnalytics').style.display = 'block';
+                title.textContent = "Constituent Analytics";
+                sub.textContent = "Demographic and Campaign loyalty metrics analyses";
+            } else if (sectionName === 'uploader') {
+                document.getElementById('sectionUploader').style.display = 'block';
+                title.textContent = "Campaign List Importer";
+                sub.textContent = "Upload or drag customized excel contact lists";
+            }
+        }
+
+        // Attach Navigation events
+        document.getElementById('menuDashboard').onclick = (e) => {
+            selectTab(e.currentTarget, 'dashboard');
+        };
+        document.getElementById('menuContacts').onclick = (e) => {
+            selectTab(e.currentTarget, 'contacts');
+        };
+        document.getElementById('menuAnalytics').onclick = (e) => {
+            selectTab(e.currentTarget, 'analytics');
+        };
+        document.getElementById('menuUploader').onclick = (e) => {
+            selectTab(e.currentTarget, 'uploader');
+        };
+
+        function selectTab(menuEl, targetTabName) {
+            document.querySelectorAll('.nav-item').forEach(itm => itm.classList.remove('active'));
+            menuEl.classList.add('active');
+            showAppSection(targetTabName);
+        }
+
+        // Sync active grid view modes
+        document.getElementById('btnViewGrid').onclick = (e) => {
+            viewMode = 'grid';
+            e.currentTarget.classList.add('active');
+            document.getElementById('btnViewList').classList.remove('active');
+            renderContactsBoard();
+        };
+        document.getElementById('btnViewList').onclick = (e) => {
+            viewMode = 'list';
+            e.currentTarget.classList.add('active');
+            document.getElementById('btnViewGrid').classList.remove('active');
+            renderContactsBoard();
+        };
+
+        // Reset Filter actions
+        document.getElementById('btnResetFilters').onclick = () => {
+            document.getElementById('searchMain').value = "";
+            document.getElementById('filterDistrict').value = "";
+            document.getElementById('filterConst').value = "";
+            document.getElementById('filterCategory').value = "";
+            document.getElementById('filterSentiment').value = "";
+            
+            selectedDistrictFilter = null;
+            selectedConstituencyFilter = null;
+            
+            const subtitle = document.getElementById('pageSubtitle');
+            subtitle.textContent = `Real-time Campaign and Constituency Management Panel`;
+            
+            populateFilters();
+            applyFiltersAndSync();
+            showNotification("CRM Filters cleared.", "info");
+        };
+
+        // Filter event listeners
+        ['searchMain', 'filterDistrict', 'filterConst', 'filterCategory', 'filterSentiment'].forEach(id => {
+            document.getElementById(id).addEventListener('change', applyFiltersAndSync);
+            document.getElementById(id).addEventListener('input', applyFiltersAndSync);
+        });
+
+        // ─── DRAG & DROP SPREADSHEET UPLOADER ───────────────────────
+        const dropZone = document.getElementById('dropZone');
+        const fileSelector = document.getElementById('fileSelector');
+        
+        dropZone.onclick = () => fileSelector.click();
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file) handleUploadedFile(file);
+        });
+
+        fileSelector.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleUploadedFile(file);
+        });
+
+        function handleUploadedFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const records = XLSX.utils.sheet_to_json(sheet);
+                    
+                    if (records && records.length > 0) {
+                        processAndStoreData(records);
+                        
+                        // Update uploader layout status info
+                        const label = document.getElementById('fileInfoLabel');
+                        label.textContent = `File Loaded: "${file.name}" (${records.length} constituent rows parsed)`;
+                        label.style.display = 'block';
+
+                        // Render parsed table visualization in Importer tab
+                        renderImporterTable(records);
+                        
+                        showNotification(`Imported ${records.length} records from custom spreadsheet!`, "success");
+                    } else {
+                        throw new Error("No readable rows found");
+                    }
+                } catch(err) {
+                    console.error(err);
+                    showNotification("Failed to parse file. Ensure structure matches standard schema.", "warning");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Preview parsed excel file rows in Importer tab
+        function renderImporterTable(records) {
+            const tableCard = document.getElementById('importerStatusCard');
+            const tbody = document.querySelector('#importerTable tbody');
+            tbody.innerHTML = '';
+            
+            records.slice(0, 10).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #e2e8f0';
+                tr.innerHTML = `
+                    <td style="padding:10px; font-weight:700;">#${row.ID || row.id || 0}</td>
+                    <td style="padding:10px;">${row.Name || row.name || 'N/A'}</td>
+                    <td style="padding:10px;">${row.District || row.district || 'N/A'}</td>
+                    <td style="padding:10px;">${row.Constituency || row.constituency || 'N/A'}</td>
+                    <td style="padding:10px;">${row.Category || row.category || 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            tableCard.style.display = 'block';
+        }
+
+        // ─── INITIALIZATION ON PAGE LOAD ──────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set dynamic Date
+            const d = new Date();
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('liveDate').textContent = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+
+            // Load spreadsheet data and sync CRM
+            loadExcelDatabase();
+
+            // Stats cards click listeners
+            document.getElementById('cardTotal').onclick = () => {
+                selectTab(document.getElementById('menuContacts'), 'contacts');
+                document.getElementById('filterCategory').value = "";
+                applyFiltersAndSync();
+            };
+            document.getElementById('cardVolunteer').onclick = () => {
+                selectTab(document.getElementById('menuContacts'), 'contacts');
+                document.getElementById('filterCategory').value = "Volunteer";
+                applyFiltersAndSync();
+            };
+            document.getElementById('cardVip').onclick = () => {
+                selectTab(document.getElementById('menuContacts'), 'contacts');
+                document.getElementById('filterCategory').value = "VIP Contact";
+                applyFiltersAndSync();
+            };
+            document.getElementById('cardCoverage').onclick = () => {
+                document.getElementById('constituencyBoard').scrollIntoView({ behavior: 'smooth' });
+            };
+
+            // Set loading screen transitionout
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.classList.add('fade-out');
+                setTimeout(() => loader.remove(), 500);
+            }, 1200);
+        });
+
+    </script>
+</body>
+
+</html>
